@@ -1,0 +1,336 @@
+===== Run: 1 / Threads: 8 =====
+---- OpenVINO INFO----
+Description : OpenVINO Runtime 
+Build number: 2026.4.0-22959-99c81491cc3-releases/2026/4 
+[INFO] Loading model files: models/squeezenet1.1-7.onnx
+[INFO] model name: onnx_Frontend_IR 
+
+Model Load: 26.216 ms
+Image Load: 0.155 ms
+Tensor Preparation: 0.010 ms
+Preprocessing Configuration: 3.476 ms
+Model Compile: 85.471 ms
+INFERENCE_NUM_THREADS: 8
+Infer Request Creation: 0.081 ms
+Input Tensor Set: 0.013 ms
+Inference Count: 10000
+Total Inference Time: 12436.278 ms
+Average Inference Time: 1.244 ms
+Inference Throughput: 804.10 infer/sec
+Result Processing: 0.115 ms
+
+Top 10 results:
+
+Image /home/jadonkim14/image-runtime-project/data/images/banana.bmp
+
+classid probability
+------- -----------
+148       189.818451
+502       185.254990
+659       181.646835
+463       178.166794
+693       172.165710
+666       170.825989
+472       168.078583
+514       163.937912
+618       162.119598
+725       162.071854
+
+ Performance counter stats for './benchmark/v0.4-inference-profile/build/hello_classification_c models/squeezenet1.1-7.onnx data/images/banana.bmp CPU 8':
+
+                 0      context-switches:u               #      0.0 cs/sec  cs_per_second     
+                 0      cpu-migrations:u                 #      0.0 migrations/sec  migrations_per_second
+              9747      page-faults:u                    #     97.7 faults/sec  page_faults_per_second
+          99757.74 msec task-clock:u                     #      7.9 CPUs  CPUs_utilized       
+         130120534      branch-misses:u                  #      1.0 %  branch_miss_rate         (50.02%)
+       12925787815      branches:u                       #    129.6 M/sec  branch_frequency     (66.68%)
+      304762210580      cpu-cycles:u                     #      3.1 GHz  cycles_frequency       (66.68%)
+      348556975140      instructions:u                   #      1.1 instructions  insn_per_cycle  (66.68%)
+       25795354043      stalled-cycles-frontend:u        #     0.08 frontend_cycles_idle        (66.65%)
+
+      12.576909751 seconds time elapsed
+
+      85.736670000 seconds user
+      14.016109000 seconds sys
+
+
+===== Run: 2 / Threads: 4 =====
+---- OpenVINO INFO----
+Description : OpenVINO Runtime 
+Build number: 2026.4.0-22959-99c81491cc3-releases/2026/4 
+[INFO] Loading model files: models/squeezenet1.1-7.onnx
+[INFO] model name: onnx_Frontend_IR 
+
+Model Load: 21.801 ms
+Image Load: 0.154 ms
+Tensor Preparation: 0.012 ms
+Preprocessing Configuration: 3.111 ms
+Model Compile: 81.483 ms
+INFERENCE_NUM_THREADS: 4
+Infer Request Creation: 0.126 ms
+Input Tensor Set: 0.028 ms
+Inference Count: 10000
+Total Inference Time: 13594.782 ms
+Average Inference Time: 1.359 ms
+Inference Throughput: 735.58 infer/sec
+Result Processing: 0.101 ms
+
+Top 10 results:
+
+Image /home/jadonkim14/image-runtime-project/data/images/banana.bmp
+
+classid probability
+------- -----------
+148       189.818451
+502       185.254990
+659       181.646835
+463       178.166794
+693       172.165710
+666       170.825989
+472       168.078583
+514       163.937912
+618       162.119598
+725       162.071854
+
+ Performance counter stats for './benchmark/v0.4-inference-profile/build/hello_classification_c models/squeezenet1.1-7.onnx data/images/banana.bmp CPU 4':
+
+                 0      context-switches:u               #      0.0 cs/sec  cs_per_second     
+                 0      cpu-migrations:u                 #      0.0 migrations/sec  migrations_per_second
+              9551      page-faults:u                    #    175.0 faults/sec  page_faults_per_second
+          54563.51 msec task-clock:u                     #      4.0 CPUs  CPUs_utilized       
+          66050220      branch-misses:u                  #      0.8 %  branch_miss_rate         (50.03%)
+        8792472527      branches:u                       #    161.1 M/sec  branch_frequency     (66.70%)
+      198740500028      cpu-cycles:u                     #      3.6 GHz  cycles_frequency       (66.67%)
+      327849598461      instructions:u                   #      1.6 instructions  insn_per_cycle  (66.65%)
+       10355560543      stalled-cycles-frontend:u        #     0.05 frontend_cycles_idle        (66.65%)
+
+      13.729019504 seconds time elapsed
+
+      50.125069000 seconds user
+       4.435386000 seconds sys
+
+
+===== Run: 3 / Threads: 8 =====
+---- OpenVINO INFO----
+Description : OpenVINO Runtime 
+Build number: 2026.4.0-22959-99c81491cc3-releases/2026/4 
+[INFO] Loading model files: models/squeezenet1.1-7.onnx
+[INFO] model name: onnx_Frontend_IR 
+
+Model Load: 20.940 ms
+Image Load: 0.127 ms
+Tensor Preparation: 0.007 ms
+Preprocessing Configuration: 3.507 ms
+Model Compile: 83.935 ms
+INFERENCE_NUM_THREADS: 8
+Infer Request Creation: 0.207 ms
+Input Tensor Set: 0.025 ms
+Inference Count: 10000
+Total Inference Time: 13928.218 ms
+Average Inference Time: 1.393 ms
+Inference Throughput: 717.97 infer/sec
+Result Processing: 0.126 ms
+
+Top 10 results:
+
+Image /home/jadonkim14/image-runtime-project/data/images/banana.bmp
+
+classid probability
+------- -----------
+148       189.818451
+502       185.254990
+659       181.646835
+463       178.166794
+693       172.165710
+666       170.825989
+472       168.078583
+514       163.937912
+618       162.119598
+725       162.071854
+
+ Performance counter stats for './benchmark/v0.4-inference-profile/build/hello_classification_c models/squeezenet1.1-7.onnx data/images/banana.bmp CPU 8':
+
+                 0      context-switches:u               #      0.0 cs/sec  cs_per_second     
+                 0      cpu-migrations:u                 #      0.0 migrations/sec  migrations_per_second
+              9756      page-faults:u                    #     87.4 faults/sec  page_faults_per_second
+         111660.73 msec task-clock:u                     #      7.9 CPUs  CPUs_utilized       
+         145094421      branch-misses:u                  #      1.1 %  branch_miss_rate         (50.05%)
+       13328123596      branches:u                       #    119.4 M/sec  branch_frequency     (66.71%)
+      313847885929      cpu-cycles:u                     #      2.8 GHz  cycles_frequency       (66.70%)
+      350591006637      instructions:u                   #      1.1 instructions  insn_per_cycle  (66.67%)
+       28737858200      stalled-cycles-frontend:u        #     0.09 frontend_cycles_idle        (66.62%)
+
+      14.069524370 seconds time elapsed
+
+      94.003872000 seconds user
+      17.639472000 seconds sys
+
+
+===== Run: 4 / Threads: 4 =====
+---- OpenVINO INFO----
+Description : OpenVINO Runtime 
+Build number: 2026.4.0-22959-99c81491cc3-releases/2026/4 
+[INFO] Loading model files: models/squeezenet1.1-7.onnx
+[INFO] model name: onnx_Frontend_IR 
+
+Model Load: 23.435 ms
+Image Load: 0.137 ms
+Tensor Preparation: 0.005 ms
+Preprocessing Configuration: 3.309 ms
+Model Compile: 77.671 ms
+INFERENCE_NUM_THREADS: 4
+Infer Request Creation: 0.067 ms
+Input Tensor Set: 0.014 ms
+Inference Count: 10000
+Total Inference Time: 15231.925 ms
+Average Inference Time: 1.523 ms
+Inference Throughput: 656.52 infer/sec
+Result Processing: 0.114 ms
+
+Top 10 results:
+
+Image /home/jadonkim14/image-runtime-project/data/images/banana.bmp
+
+classid probability
+------- -----------
+148       189.818451
+502       185.254990
+659       181.646835
+463       178.166794
+693       172.165710
+666       170.825989
+472       168.078583
+514       163.937912
+618       162.119598
+725       162.071854
+
+ Performance counter stats for './benchmark/v0.4-inference-profile/build/hello_classification_c models/squeezenet1.1-7.onnx data/images/banana.bmp CPU 4':
+
+                 0      context-switches:u               #      0.0 cs/sec  cs_per_second     
+                 0      cpu-migrations:u                 #      0.0 migrations/sec  migrations_per_second
+              9559      page-faults:u                    #    156.4 faults/sec  page_faults_per_second
+          61113.27 msec task-clock:u                     #      4.0 CPUs  CPUs_utilized       
+          75243305      branch-misses:u                  #      0.8 %  branch_miss_rate         (50.01%)
+        9040120033      branches:u                       #    147.9 M/sec  branch_frequency     (66.68%)
+      207592805882      cpu-cycles:u                     #      3.4 GHz  cycles_frequency       (66.66%)
+      328716638775      instructions:u                   #      1.6 instructions  insn_per_cycle  (66.67%)
+       12554194514      stalled-cycles-frontend:u        #     0.06 frontend_cycles_idle        (66.67%)
+
+      15.366160923 seconds time elapsed
+
+      54.695234000 seconds user
+       6.415440000 seconds sys
+
+
+===== Run: 5 / Threads: 8 =====
+---- OpenVINO INFO----
+Description : OpenVINO Runtime 
+Build number: 2026.4.0-22959-99c81491cc3-releases/2026/4 
+[INFO] Loading model files: models/squeezenet1.1-7.onnx
+[INFO] model name: onnx_Frontend_IR 
+
+Model Load: 19.852 ms
+Image Load: 0.273 ms
+Tensor Preparation: 0.013 ms
+Preprocessing Configuration: 4.247 ms
+Model Compile: 76.511 ms
+INFERENCE_NUM_THREADS: 8
+Infer Request Creation: 0.081 ms
+Input Tensor Set: 0.013 ms
+Inference Count: 10000
+Total Inference Time: 13201.704 ms
+Average Inference Time: 1.320 ms
+Inference Throughput: 757.48 infer/sec
+Result Processing: 0.125 ms
+
+Top 10 results:
+
+Image /home/jadonkim14/image-runtime-project/data/images/banana.bmp
+
+classid probability
+------- -----------
+148       189.818451
+502       185.254990
+659       181.646835
+463       178.166794
+693       172.165710
+666       170.825989
+472       168.078583
+514       163.937912
+618       162.119598
+725       162.071854
+
+ Performance counter stats for './benchmark/v0.4-inference-profile/build/hello_classification_c models/squeezenet1.1-7.onnx data/images/banana.bmp CPU 8':
+
+                 0      context-switches:u               #      0.0 cs/sec  cs_per_second     
+                 0      cpu-migrations:u                 #      0.0 migrations/sec  migrations_per_second
+              9761      page-faults:u                    #     92.3 faults/sec  page_faults_per_second
+         105768.41 msec task-clock:u                     #      7.9 CPUs  CPUs_utilized       
+         136823160      branch-misses:u                  #      1.0 %  branch_miss_rate         (50.00%)
+       13147124518      branches:u                       #    124.3 M/sec  branch_frequency     (66.66%)
+      300438332319      cpu-cycles:u                     #      2.8 GHz  cycles_frequency       (66.65%)
+      349723657630      instructions:u                   #      1.2 instructions  insn_per_cycle  (66.67%)
+       26512835843      stalled-cycles-frontend:u        #     0.09 frontend_cycles_idle        (66.70%)
+
+      13.325553942 seconds time elapsed
+
+      88.561289000 seconds user
+      17.177560000 seconds sys
+
+
+===== Run: 6 / Threads: 4 =====
+---- OpenVINO INFO----
+Description : OpenVINO Runtime 
+Build number: 2026.4.0-22959-99c81491cc3-releases/2026/4 
+[INFO] Loading model files: models/squeezenet1.1-7.onnx
+[INFO] model name: onnx_Frontend_IR 
+
+Model Load: 26.863 ms
+Image Load: 0.288 ms
+Tensor Preparation: 0.016 ms
+Preprocessing Configuration: 4.266 ms
+Model Compile: 86.075 ms
+INFERENCE_NUM_THREADS: 4
+Infer Request Creation: 0.108 ms
+Input Tensor Set: 0.020 ms
+Inference Count: 10000
+Total Inference Time: 13610.110 ms
+Average Inference Time: 1.361 ms
+Inference Throughput: 734.75 infer/sec
+Result Processing: 0.106 ms
+
+Top 10 results:
+
+Image /home/jadonkim14/image-runtime-project/data/images/banana.bmp
+
+classid probability
+------- -----------
+148       189.818451
+502       185.254990
+659       181.646835
+463       178.166794
+693       172.165710
+666       170.825989
+472       168.078583
+514       163.937912
+618       162.119598
+725       162.071854
+
+ Performance counter stats for './benchmark/v0.4-inference-profile/build/hello_classification_c models/squeezenet1.1-7.onnx data/images/banana.bmp CPU 4':
+
+                 0      context-switches:u               #      0.0 cs/sec  cs_per_second     
+                 0      cpu-migrations:u                 #      0.0 migrations/sec  migrations_per_second
+              9532      page-faults:u                    #    174.5 faults/sec  page_faults_per_second
+          54630.43 msec task-clock:u                     #      4.0 CPUs  CPUs_utilized       
+          68161924      branch-misses:u                  #      0.8 %  branch_miss_rate         (49.99%)
+        8809651141      branches:u                       #    161.3 M/sec  branch_frequency     (66.67%)
+      197511076397      cpu-cycles:u                     #      3.6 GHz  cycles_frequency       (66.68%)
+      328226007536      instructions:u                   #      1.7 instructions  insn_per_cycle  (66.68%)
+       10339672573      stalled-cycles-frontend:u        #     0.05 frontend_cycles_idle        (66.68%)
+
+      13.750279813 seconds time elapsed
+
+      50.414099000 seconds user
+       4.215506000 seconds sys
+
+
