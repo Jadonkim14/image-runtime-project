@@ -70,6 +70,8 @@ int main(int argc, char** argv) {
     ov_output_const_port_t* output_port = NULL;
     ov_output_const_port_t* input_port = NULL;
     c_mat_t img = {0};
+    struct timespec start;
+    struct timespec end;
 
     // -------- Get OpenVINO runtime version --------
     ov_version_t version;
@@ -92,8 +94,16 @@ int main(int argc, char** argv) {
 
     // -------- Step 2. Read a model --------
     printf("[INFO] Loading model files: %s\n", input_model);
+    clock_gettime(CLOCK_MONOTONIC, &start);
     CHECK_STATUS(ov_core_read_model(core, input_model, NULL, &model));
+    clock_gettime(CLOCK_MONOTONIC, &end);
     print_model_input_output_info(model);
+
+    double model_load_time = 
+    	(end.tv_sec - start.tv_sec) * 1000.0
+    	+ (end.tv_nsec - start.tv_nsec) / 1000000.0;
+
+    printf("\nModel Load: %.3f ms", model_load_time);
 
     CHECK_STATUS(ov_model_const_output(model, &output_port));
     if (!output_port) {
@@ -108,14 +118,32 @@ int main(int argc, char** argv) {
     }
 
     // -------- Step 3. Set up input
-
+    clock_gettime(CLOCK_MONOTONIC, &start);
     image_read(input_image_path, &img);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+
+    double image_load_time = 
+    	(end.tv_sec - start.tv_sec) * 1000.0
+    	+ (end.tv_nsec - start.tv_nsec) / 1000000.0;
+
+    printf("\nImage Load: %.3f ms", image_load_time);
+
     ov_element_type_e input_type = U8;
     int64_t dims[4] = {1, (size_t)img.mat_height, (size_t)img.mat_width, 3};
+
+    clock_gettime(CLOCK_MONOTONIC, &start);
     ov_shape_create(4, dims, &input_shape);
     CHECK_STATUS(ov_tensor_create_from_host_ptr(input_type, input_shape, img.mat_data, &tensor));
+    clock_gettime(CLOCK_MONOTONIC, &end);
+
+    double tensor_prep_time = 
+    	(end.tv_sec - start.tv_sec) * 1000.0
+    	+ (end.tv_nsec - start.tv_nsec) / 1000000.0;
+
+    printf("\nTensor Preparation: %.3f ms", tensor_prep_time);
 
     // -------- Step 4. Configure preprocessing --------
+    clock_gettime(CLOCK_MONOTONIC, &start);
     CHECK_STATUS(ov_preprocess_prepostprocessor_create(model, &preprocess));
     CHECK_STATUS(ov_preprocess_prepostprocessor_get_input_info_by_index(preprocess, 0, &input_info));
 
@@ -139,35 +167,75 @@ int main(int argc, char** argv) {
     CHECK_STATUS(ov_preprocess_output_set_element_type(output_tensor_info, F32));
 
     CHECK_STATUS(ov_preprocess_prepostprocessor_build(preprocess, &new_model));
+    clock_gettime(CLOCK_MONOTONIC, &end);
+
+    double preproc_config_time = 
+    	(end.tv_sec - start.tv_sec) * 1000.0
+    	+ (end.tv_nsec - start.tv_nsec) / 1000000.0;
+
+    printf("\nPreprocessing Configuration: %.3f ms\n", preproc_config_time);
 
     // -------- Step 5. Loading a model to the device --------
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
     CHECK_STATUS(ov_core_compile_model(core, new_model, device_name, 0, &compiled_model));
 
+    clock_gettime(CLOCK_MONOTONIC, &end);
+
+    double model_compile_time =
+        (end.tv_sec - start.tv_sec) * 1000.0
+        + (end.tv_nsec - start.tv_nsec) / 1000000.0;
+
+    printf("Model Compile: %.3f ms\n", model_compile_time);
+
+
     // -------- Step 6. Create an infer request --------
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
     CHECK_STATUS(ov_compiled_model_create_infer_request(compiled_model, &infer_request));
 
+    clock_gettime(CLOCK_MONOTONIC, &end);
+
+    double infer_request_creation_time =
+        (end.tv_sec - start.tv_sec) * 1000.0
+        + (end.tv_nsec - start.tv_nsec) / 1000000.0;
+
+    printf("Infer Request Creation: %.3f ms\n", infer_request_creation_time);
+
+
     // -------- Step 7. Prepare input --------
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
     CHECK_STATUS(ov_infer_request_set_input_tensor_by_index(infer_request, 0, tensor));
+
+    clock_gettime(CLOCK_MONOTONIC, &end);
+
+    double input_tensor_set_time =
+        (end.tv_sec - start.tv_sec) * 1000.0
+        + (end.tv_nsec - start.tv_nsec) / 1000000.0;
+
+    printf("Input Tensor Set: %.3f ms\n", input_tensor_set_time);
+
 
     // -------- Step 8. Do inference synchronously --------
     double latencies[100];
-    
+
     for (int i = 0; i < 100; i++) {
-        struct timespec start;
-        struct timespec end;
+        clock_gettime(CLOCK_MONOTONIC, &start);
 
-	clock_gettime(CLOCK_MONOTONIC, &start);
         CHECK_STATUS(ov_infer_request_infer(infer_request));
-	clock_gettime(CLOCK_MONOTONIC, &end);
 
-	latencies[i] =
-    		(end.tv_sec - start.tv_sec) * 1000.0
-    		+ (end.tv_nsec - start.tv_nsec) / 1000000.0;
+        clock_gettime(CLOCK_MONOTONIC, &end);
+
+        latencies[i] =
+            (end.tv_sec - start.tv_sec) * 1000.0
+            + (end.tv_nsec - start.tv_nsec) / 1000000.0;
     }
 
     double sum = 0.0;
     for (int i = 0; i < 100; i++)
         sum += latencies[i];
+
     double avg = sum / 100.0;
 
     qsort(latencies, 100, sizeof(double), compare_latency);
@@ -179,18 +247,37 @@ int main(int argc, char** argv) {
     printf("\nP95 latency: %.3f ms", p95);
     printf("\nP99 latency: %.3f ms\n", p99);
 
-    // -------- Step 9. Process output
-    CHECK_STATUS(ov_infer_request_get_output_tensor_by_index(infer_request, 0, &output_tensor));
-    // Print classification results
+
+    // -------- Step 9. Process output --------
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
+    CHECK_STATUS(ov_infer_request_get_output_tensor_by_index(
+        infer_request, 0, &output_tensor));
+
     size_t results_num;
     results = tensor_to_infer_result(output_tensor, &results_num);
+
     infer_result_sort(results, results_num);
+
+    clock_gettime(CLOCK_MONOTONIC, &end);
+
+    double result_processing_time =
+        (end.tv_sec - start.tv_sec) * 1000.0
+        + (end.tv_nsec - start.tv_nsec) / 1000000.0;
+
+    printf("Result Processing: %.3f ms\n", result_processing_time);
+
+
+    // -------- Print classification results --------
     size_t top = 10;
+
     if (top > results_num) {
         top = results_num;
     }
+
     printf("\nTop %zu results:\n", top);
-    print_infer_result(results, top, input_image_path);
+    print_infer_result(results, top, input_image_path);   
+
 
     // -------- free allocated resources --------
 err:
