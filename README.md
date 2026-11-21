@@ -23,7 +23,7 @@ Compared sequential inference with 2, 4, and 8 asynchronous requests on the CPU.
 
 Four asynchronous requests achieved the highest mean throughput, **11.90% higher** than sequential execution.
 
-- [Benchmark notes and reproduction guide](docs/p1-benchmark.md)
+- [Benchmark notes and reproduction guide](docs/cpu-inference-benchmark.md)
 - [Per-run measurements](benchmark/results/p1/2026-11-21/runs.csv)
 - [Correctness checks](benchmark/results/p1/2026-11-21/validation.csv)
 
