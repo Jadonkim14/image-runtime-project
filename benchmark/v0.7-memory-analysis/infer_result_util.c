@@ -1,6 +1,8 @@
 // Copyright (C) 2018-2026 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 //
+#include <math.h>
+#include <stdbool.h>
 #include <time.h>
 
 #include "infer_result_util.h"
@@ -13,24 +15,30 @@ size_t g_result_malloc_count = 0;
 size_t g_result_copy_count = 0;
 size_t g_result_sort_count = 0;
 
+static bool profiling = true;
+
+void set_infer_result_profiling(bool enabled) {
+    profiling = enabled;
+}
+
 int compare(const void* a, const void* b) {
     const struct infer_result* sa = (const struct infer_result*)a;
     const struct infer_result* sb = (const struct infer_result*)b;
-    if (sa->probability < sb->probability) {
+    if (isnan(sa->probability) != isnan(sb->probability))
+        return isnan(sa->probability) ? 1 : -1;
+    if (sa->probability < sb->probability)
         return 1;
-    } else if ((sa->probability == sb->probability) && (sa->class_id > sb->class_id)) {
-        return 1;
-    } else if (sa->probability > sb->probability) {
+    if (sa->probability > sb->probability)
         return -1;
-    }
-    return 0;
+    return (sa->class_id > sb->class_id) - (sa->class_id < sb->class_id);
 }
 
 void infer_result_sort(struct infer_result* results, size_t result_size) {
     struct timespec start;
     struct timespec end;
 
-    clock_gettime(CLOCK_MONOTONIC, &start);
+    if (profiling)
+        clock_gettime(CLOCK_MONOTONIC, &start);
 
     qsort(
         results,
@@ -39,13 +47,15 @@ void infer_result_sort(struct infer_result* results, size_t result_size) {
         compare
     );
 
-    clock_gettime(CLOCK_MONOTONIC, &end);
+    if (profiling) {
+        clock_gettime(CLOCK_MONOTONIC, &end);
 
-    g_result_sort_time_ms +=
-        (end.tv_sec - start.tv_sec) * 1000.0 +
-        (end.tv_nsec - start.tv_nsec) / 1000000.0;
+        g_result_sort_time_ms +=
+            (end.tv_sec - start.tv_sec) * 1000.0 +
+            (end.tv_nsec - start.tv_nsec) / 1000000.0;
 
-    g_result_sort_count++;
+        g_result_sort_count++;
+    }
 }
 
 struct infer_result* tensor_to_infer_result(ov_tensor_t* tensor, size_t* result_size) {
@@ -54,25 +64,33 @@ struct infer_result* tensor_to_infer_result(ov_tensor_t* tensor, size_t* result_
     if (status != OK)
         return NULL;
 
-    *result_size = output_shape.dims[1];
+    if (output_shape.rank < 2 || output_shape.dims[1] <= 0 ||
+        (uint64_t)output_shape.dims[1] > SIZE_MAX / sizeof(struct infer_result)) {
+        ov_shape_free(&output_shape);
+        return NULL;
+    }
+    *result_size = (size_t)output_shape.dims[1];
 
     struct timespec start;
     struct timespec end;
 
-    clock_gettime(CLOCK_MONOTONIC, &start);
+    if (profiling)
+        clock_gettime(CLOCK_MONOTONIC, &start);
 
     struct infer_result* results =
         (struct infer_result*)malloc(
             sizeof(struct infer_result) * (*result_size)
         );
 
-    clock_gettime(CLOCK_MONOTONIC, &end);
+    if (profiling) {
+        clock_gettime(CLOCK_MONOTONIC, &end);
 
-    g_result_malloc_time_ms +=
-        (end.tv_sec - start.tv_sec) * 1000.0 +
-        (end.tv_nsec - start.tv_nsec) / 1000000.0;
+        g_result_malloc_time_ms +=
+            (end.tv_sec - start.tv_sec) * 1000.0 +
+            (end.tv_nsec - start.tv_nsec) / 1000000.0;
 
-    g_result_malloc_count++;
+        g_result_malloc_count++;
+    }
 
     if (!results) {
         ov_shape_free(&output_shape);
@@ -88,7 +106,8 @@ struct infer_result* tensor_to_infer_result(ov_tensor_t* tensor, size_t* result_
     }
     float* float_data = (float*)(data);
 
-    clock_gettime(CLOCK_MONOTONIC, &start);
+    if (profiling)
+        clock_gettime(CLOCK_MONOTONIC, &start);
 
     size_t i;
     for (i = 0; i < *result_size; ++i) {
@@ -96,13 +115,15 @@ struct infer_result* tensor_to_infer_result(ov_tensor_t* tensor, size_t* result_
         results[i].probability = float_data[i];
     }
 
-    clock_gettime(CLOCK_MONOTONIC, &end);
+    if (profiling) {
+        clock_gettime(CLOCK_MONOTONIC, &end);
 
-    g_result_copy_time_ms +=
-        (end.tv_sec - start.tv_sec) * 1000.0 +
-        (end.tv_nsec - start.tv_nsec) / 1000000.0;
+        g_result_copy_time_ms +=
+            (end.tv_sec - start.tv_sec) * 1000.0 +
+            (end.tv_nsec - start.tv_nsec) / 1000000.0;
 
-    g_result_copy_count++;
+        g_result_copy_count++;
+    }
 
     ov_shape_free(&output_shape);
     return results;

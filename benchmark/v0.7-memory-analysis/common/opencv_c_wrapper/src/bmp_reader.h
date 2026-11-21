@@ -3,6 +3,7 @@
 //
 #pragma once
 
+#include <stdbool.h>
 #include <stddef.h>
 
 typedef struct BmpHeaderType {
@@ -33,5 +34,6 @@ typedef struct BitMapType {
 
 int readBmpImage(const char* fileName, BitMap* image);
 
+void set_bmp_profiling(bool enabled);
 double get_total_malloc_time_ms(void);
 size_t get_malloc_count(void);

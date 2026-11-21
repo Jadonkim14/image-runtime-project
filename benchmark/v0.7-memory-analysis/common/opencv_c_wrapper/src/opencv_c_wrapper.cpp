@@ -12,9 +12,10 @@ extern "C" {
 #ifndef USE_OPENCV
 
 int image_read(const char* img_path, c_mat_t* img) {
-    BitMap bmp;
-    bmp.data = NULL;
+    BitMap bmp = {};
     int retCode = readBmpImage(img_path, &bmp);
+    if (retCode != 0)
+        return retCode;
 
     img->mat_data = bmp.data;
     img->mat_data_size = bmp.width * bmp.height * 3;

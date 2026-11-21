@@ -19,6 +19,7 @@ add_subdirectory(
 add_executable(
 	hello_classification_c
 	main.c
+	p1_benchmark.c
 	infer_result_util.c
 )
 

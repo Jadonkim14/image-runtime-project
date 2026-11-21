@@ -5,7 +5,10 @@
 #pragma once
 
 #include <openvino/c/openvino.h>
+#include <stdbool.h>
 #include <stdlib.h>
+
+void set_infer_result_profiling(bool enabled);
 
 /**
  * @brief Struct to store infer results

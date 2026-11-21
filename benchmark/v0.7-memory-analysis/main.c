@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,6 +16,7 @@
 #include "opencv_c_wrapper.h"
 #include "openvino/c/openvino.h"
 #include "bmp_reader.h"
+#include "p1_benchmark.h"
 
 void print_model_input_output_info(ov_model_t* model) {
     char* friendly_name = NULL;
@@ -37,19 +39,58 @@ int compare_latency(const void *a, const void *b)
     return 0;
 }
 
-#define CHECK_STATUS(return_status)                                                      \
-    if (return_status != OK) {                                                           \
-        fprintf(stderr, "[ERROR] return status %d, line %d\n", return_status, __LINE__); \
-        goto err;                                                                        \
-    }
+#define CHECK_STATUS(operation) do { \
+    ov_status_e status = (operation); \
+    if (status != OK) { \
+        fprintf(stderr, "[ERROR] return status %d, line %d\n", status, __LINE__); \
+        goto err; \
+    } \
+} while (0)
+
+static bool parse_count(const char* value, size_t max, size_t* count) {
+    if (!*value || strspn(value, "0123456789") != strlen(value))
+        return false;
+    errno = 0;
+    unsigned long long parsed = strtoull(value, NULL, 10);
+    if (errno || parsed > max)
+        return false;
+    *count = (size_t)parsed;
+    return true;
+}
 
 int main(int argc, char** argv) {
     // -------- Check input parameters --------
-    if (argc != 6) {
+    const bool p1 = argc == 8 || argc == 9;
+    if (argc != 6 && !p1) {
         printf("Usage : ./hello_classification_c <path_to_model> <path_to_image_directory> "
-               "<device_name> <inference_threads> <repeat_count>\n");
+               "<device_name> <inference_threads> <repeat_count|jobs:N> [requests warmup_repeats [top10.csv]]\n");
         return EXIT_FAILURE;
     }
+
+    size_t measured_jobs = 0, request_count = 0, warmup_repeats = 0, p1_threads = 0;
+    if (p1) {
+        const bool explicit_jobs = strncmp(argv[5], "jobs:", 5) == 0;
+        const char* workload = explicit_jobs ? argv[5] + 5 : argv[5];
+        const size_t workload_limit = explicit_jobs ? SIZE_MAX : SIZE_MAX / P1_IMAGE_COUNT;
+        if (strcmp(argv[3], "CPU") || !parse_count(argv[4], INT32_MAX, &p1_threads) || !p1_threads ||
+            !parse_count(workload, workload_limit, &measured_jobs) || !measured_jobs ||
+            !parse_count(argv[6], 8, &request_count) ||
+            (request_count != 1 && request_count != 2 && request_count != 4 && request_count != 8) ||
+            !parse_count(argv[7], SIZE_MAX / P1_IMAGE_COUNT, &warmup_repeats)) {
+            fprintf(stderr, "[P1] expected CPU, positive thread and workload counts, requests in {1,2,4,8}, "
+                            "and nonnegative warmup repeats\n");
+            return EXIT_FAILURE;
+        }
+        if (!explicit_jobs)
+            measured_jobs *= P1_IMAGE_COUNT;
+        set_bmp_profiling(false);
+        set_infer_result_profiling(false);
+    }
+
+    int exit_status = EXIT_FAILURE;
+    ov_partial_shape_t dynamic_input_shape = {0};
+    ov_output_const_port_t* compiled_input_port = NULL;
+    ov_partial_shape_t compiled_input_partial_shape = {0};
 
     #define NUM_REQUESTS 4
 
@@ -107,8 +148,9 @@ int main(int argc, char** argv) {
         "banana.bmp"
     );
 
-    dir = opendir(input_directory_path);
-    if (dir == NULL) {
+    if (!p1)
+        dir = opendir(input_directory_path);
+    if (!p1 && dir == NULL) {
         fprintf(stderr, "[ERROR] Failed to open image directory: %s\n",
                 input_directory_path);
         goto err;
@@ -129,10 +171,10 @@ int main(int argc, char** argv) {
         )
     );
 
-    int repeat_count = atoi(argv[5]);
-    if (repeat_count <= 0) {
+    int repeat_count = p1 ? 0 : atoi(argv[5]);
+    if (!p1 && repeat_count <= 0) {
         fprintf(stderr, "repeat_count must be greater than 0\n");
-        return EXIT_FAILURE;
+        goto err;
     }
 
     // -------- Step 2. Read a model --------
@@ -162,7 +204,10 @@ int main(int argc, char** argv) {
 
     // -------- Step 3. Set up input
     clock_gettime(CLOCK_MONOTONIC, &start);
-    image_read(representative_image_path, &representative_img);
+    if (image_read(representative_image_path, &representative_img) != 0 || !representative_img.mat_data) {
+        fprintf(stderr, "[ERROR] Failed to load representative image: %s\n", representative_image_path);
+        goto err;
+    }
     clock_gettime(CLOCK_MONOTONIC, &end);
 
     double image_load_time = 
@@ -174,13 +219,13 @@ int main(int argc, char** argv) {
     ov_element_type_e input_type = U8;
     int64_t representative_dims[4] = {
         1,
-        (size_t)representative_img.mat_height,
-        (size_t)representative_img.mat_width,
+        representative_img.mat_height,
+        representative_img.mat_width,
         3
     };
 
     clock_gettime(CLOCK_MONOTONIC, &start);
-    ov_shape_create(4, representative_dims, &representative_input_shape);
+    CHECK_STATUS(ov_shape_create(4, representative_dims, &representative_input_shape));
     CHECK_STATUS(
         ov_tensor_create_from_host_ptr(
             input_type,
@@ -239,8 +284,6 @@ int main(int argc, char** argv) {
         {3, 3}      // C
     };
 
-    ov_partial_shape_t dynamic_input_shape = {0};
-
     CHECK_STATUS(
         ov_partial_shape_create(
             4,
@@ -256,6 +299,11 @@ int main(int argc, char** argv) {
         )
     );
 
+
+    if (p1) {
+        CHECK_STATUS(ov_core_set_property(core, device_name, "PERFORMANCE_HINT", "LATENCY"));
+        CHECK_STATUS(ov_core_set_property(core, device_name, "NUM_STREAMS", "1"));
+    }
 
     // -------- Step 5. Loading a model to the device --------
     clock_gettime(CLOCK_MONOTONIC, &start);
@@ -293,9 +341,20 @@ int main(int argc, char** argv) {
 
     ov_free(inference_threads);
 
+    if (p1) {
+        const char* properties[] = {"PERFORMANCE_HINT", "NUM_STREAMS"};
+        for (size_t i = 0; i < sizeof(properties) / sizeof(properties[0]); ++i) {
+            char* value = NULL;
+            CHECK_STATUS(ov_compiled_model_get_property(compiled_model, properties[i], &value));
+            printf("%s: %s\n", properties[i], value);
+            ov_free(value);
+        }
+        exit_status = p1_benchmark(compiled_model, input_directory_path, request_count,
+                                   warmup_repeats, measured_jobs, argc == 9 ? argv[8] : NULL);
+        goto err;
+    }
+
     // -------- Check compiled model input shape --------
-    ov_output_const_port_t* compiled_input_port = NULL;
-    ov_partial_shape_t compiled_input_partial_shape = {0};
 
     CHECK_STATUS(
         ov_compiled_model_input_by_index(
@@ -474,10 +533,10 @@ int main(int argc, char** argv) {
 
             clock_gettime(CLOCK_MONOTONIC, &start);
 
-            size_t dims[4] = {
+            int64_t dims[4] = {
                 1,
-                (size_t)images[slot].mat_height,
-                (size_t)images[slot].mat_width,
+                images[slot].mat_height,
+                images[slot].mat_width,
                 3
             };
 
@@ -712,6 +771,8 @@ int main(int argc, char** argv) {
         get_result_sort_count()
     );
 
+    exit_status = EXIT_SUCCESS;
+
     // -------- free allocated resources --------
 err:
     // -------- Per-image resources --------
@@ -807,5 +868,5 @@ err:
     if (dir)
         closedir(dir);
 
-    return EXIT_SUCCESS;
+    return exit_status;
 }

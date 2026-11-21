@@ -7,6 +7,7 @@
 #include <memory.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <time.h>
 
 #define CLEANUP_AND_RETURN(x)                           \
@@ -20,6 +21,12 @@
 
 double g_total_malloc_time_ms = 0.0;
 size_t g_malloc_count = 0;
+
+static bool profiling = true;
+
+void set_bmp_profiling(bool enabled) {
+    profiling = enabled;
+}
 
 int readBmpImage(const char* fileName, BitMap* image) {
     size_t cnt;
@@ -111,16 +118,19 @@ int readBmpImage(const char* fileName, BitMap* image) {
     struct timespec alloc_start;
     struct timespec alloc_end;
 
-    clock_gettime(CLOCK_MONOTONIC, &alloc_start);
+    if (profiling)
+        clock_gettime(CLOCK_MONOTONIC, &alloc_start);
     image->data = malloc(size);
-    clock_gettime(CLOCK_MONOTONIC, &alloc_end);
+    if (profiling) {
+        clock_gettime(CLOCK_MONOTONIC, &alloc_end);
 
-    double alloc_time_ms =
-        (alloc_end.tv_sec - alloc_start.tv_sec) * 1000.0 +
-        (alloc_end.tv_nsec - alloc_start.tv_nsec) / 1000000.0;
+        double alloc_time_ms =
+            (alloc_end.tv_sec - alloc_start.tv_sec) * 1000.0 +
+            (alloc_end.tv_nsec - alloc_start.tv_nsec) / 1000000.0;
 
-    g_total_malloc_time_ms += alloc_time_ms;
-    g_malloc_count++;
+        g_total_malloc_time_ms += alloc_time_ms;
+        g_malloc_count++;
+    }
 
     if (NULL == image->data) {
         printf("[BMP] memory allocation failed\n");
